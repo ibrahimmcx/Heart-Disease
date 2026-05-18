@@ -173,18 +173,23 @@ def predict_cardiac_risk(patient: PatientData):
         # Extract sub-features for the current diagnostic stage
         sub_feats = scaled_patient_array[meta['indices']]
         prob = meta['model'].predict_proba(sub_feats.reshape(1, -1))[0, 1]
-        final_prob = prob
+        
+        # In this dataset, target=1 corresponds to "Healthy" and target=0 to "Heart Disease".
+        # Therefore, predict_proba[:, 1] is the probability of being healthy.
+        # We invert it to represent cardiac risk (probability of heart disease).
+        risk_prob = 1.0 - prob
+        final_prob = risk_prob
         final_cost = meta['cumulative_cost']
         
         escalation_path.append({
             "stage": stage_name.upper().replace("_", " "),
-            "probability": float(prob),
+            "probability": float(risk_prob),
             "cost": float(final_cost),
             "features_used": meta['features']
         })
         
         # Confidence achieved (stop escalation)
-        if prob < lower_threshold or prob > upper_threshold:
+        if risk_prob < lower_threshold or risk_prob > upper_threshold:
             break
             
     # 3. Compute local explainability (SHAP values) for the features utilized at the final stage
@@ -194,19 +199,31 @@ def predict_cardiac_risk(patient: PatientData):
     
     # Get scaled values of utilized features
     utilized_values_scaled = scaled_patient_array[final_indices]
-    global_importances = np.array(explainability_metadata["importances"])[final_indices]
     
-    # Calculate local risk contribution: scaled value * feature importance
-    local_contributions = utilized_values_scaled * global_importances
+    # Define Pearson correlation signs with target (1=Healthy, 0=Sick)
+    # A negative correlation with target means higher values of this feature increase cardiac risk.
+    FEATURE_CORR_SIGNS = {
+        'age': -1, 'sex': -1, 'cp': 1, 'trestbps': -1, 'chol': -1, 'fbs': -1,
+        'restecg': 1, 'slope': 1, 'thalach': 1, 'exang': -1, 'oldpeak': -1, 'ca': -1, 'thal': -1
+    }
     
     # Map to structured responses with raw values for clinician display
     explanations = []
-    for f, idx, contrib in zip(final_features, final_indices, local_contributions):
+    for f, idx in zip(final_features, final_indices):
         raw_val = raw_patient_dict[f]
+        scaled_val = scaled_patient_array[idx]
+        imp = explainability_metadata["importances"][idx]
+        
+        # Compute local risk contribution with correct clinical direction:
+        # If correlation with target is negative (-1), positive scaled values increase risk.
+        # If correlation with target is positive (1), positive scaled values decrease risk.
+        multiplier = 1.0 if FEATURE_CORR_SIGNS.get(f, -1) < 0 else -1.0
+        contrib = scaled_val * imp * multiplier
+        
         explanations.append({
             "feature": f.upper(),
             "raw_value": float(raw_val),
-            "scaled_value": float(scaled_patient_array[idx]),
+            "scaled_value": float(scaled_val),
             "risk_impact": float(contrib),
             "cost": CLINICAL_COSTS[f]
         })
@@ -234,7 +251,7 @@ def predict_cardiac_risk(patient: PatientData):
         "diagnostic_stage_reached": current_stage.upper().replace("_", " "),
         "escalation_path": escalation_path,
         "explanations": explanations,
-        "baseline_probability": float(explainability_metadata["baseline"])
+        "baseline_probability": 1.0 - float(explainability_metadata["baseline"])
     }
 
 # Bind static directory if it exists

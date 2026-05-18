@@ -4,6 +4,13 @@
 
 let shapChart = null;
 
+// Determine backend API Base URL based on page origin.
+// Enables double-clicking index.html directly from local folder.
+const API_BASE = (window.location.protocol === "file:" || window.location.origin === "null") 
+    ? "http://127.0.0.1:8001" 
+    : "";
+
+
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Initialize Dynamic Form Badge Value Listeners
     setupSliderListeners();
@@ -45,14 +52,14 @@ function setupSliderListeners() {
 async function fetchSystemBenchmarks() {
     try {
         // Fetch model performance
-        const metricsRes = await fetch("/api/metrics");
+        const metricsRes = await fetch(`${API_BASE}/api/metrics`);
         if (metricsRes.ok) {
             const metrics = await metricsRes.json();
             populateMetricsTable(metrics);
         }
 
         // Fetch cost savings & Pareto
-        const costRes = await fetch("/api/cost-summary");
+        const costRes = await fetch(`${API_BASE}/api/cost-summary`);
         if (costRes.ok) {
             const summary = await costRes.json();
             updateParetoSummary(summary);
@@ -123,7 +130,7 @@ async function runPatientDiagnosis() {
         };
 
         // Post request to predict risk
-        const response = await fetch("/api/predict", {
+        const response = await fetch(`${API_BASE}/api/predict`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(patientData)
