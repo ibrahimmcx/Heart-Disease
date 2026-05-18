@@ -63,8 +63,43 @@ Geliştirdiğimiz sistem, düz bir makine öğrenmesi modeli olmaktan öte, tıp
 
 ---
 
-## 📈 5. Sonuç Değerlendirmesi
+## 📈 5. Kaggle KNN Projesi İncelemesi (`mohamedalaaabdella` - %98.83 Doğruluk İddiası)
 
-Kaggle üzerindeki standart projeler (incelediğimiz grup çalışması dahil) makine öğrenmesini sadece matematiksel bir "sınıflandırma" oyunu olarak ele almaktadır. Bu projeler veri temizleme adımlarını doğru yapsalar dahi, **sağlık sektörünün en büyük iki kısıtı olan tıbbi test maliyetlerini ve hasta odaklı girişimsel riskleri** tamamen devre dışı bırakmaktadır.
+Bu projede yazar, k-Nearest Neighbors (k-En Yakın Komşu - KNN) algoritmasını kullanarak kalp hastalığı veri setinde **%98.83 test doğruluğu (accuracy)** elde ettiğini iddia etmektedir. Ancak, bu doğruluk oranı klinik ve bilimsel açıdan **tamamen geçersizdir**.
 
-Bizim geliştirdiğimiz **Cardio-Shield CDSS** ise veri bilimi ile klinik/finansal yönetimi bir araya getirerek, **maliyetleri %72.8 düşürürken tahmin doğruluğunu koruyan**, açıklanabilir yapay zekaya sahip gerçekçi ve ticari olarak uygulanabilir bir sağlık teknolojisi ürünüdür.
+### ⚠️ Kritik Metodolojik Hata: Veri Sızıntısı (Data Leakage)
+
+KNN modeliyle elde edilen %98.83 doğruluk oranının arkasında çok büyük bir veri bilimi hatası yatmaktadır: **Mükerrer verilerin silinmemiş olması (`df.drop_duplicates()` eksikliği).**
+
+#### Hatanın Mekanizması:
+1. **Veri Kümesinin Yapısı:** Kaggle'daki kalp hastalığı veri kümesi (1025 satır), aslında 303 satırlık orijinal Cleveland veri kümesinin yaklaşık 3.4 kez kopyalanıp çoğaltılmış halidir.
+2. **Hatalı Bölme:** Yazar, mükerrer hastaları silmeden doğrudan `%75-%25` oranında `train_test_split` yapmıştır.
+3. **Sızıntı (Leakage):** Rastgele bölme nedeniyle, test setine düşen 257 hastanın neredeyse tamamının birebir aynı tıbbi kayıtlara sahip kopyaları eğitim setine (768 satır) de düşmüştür.
+4. **KNN Algoritmasının Zaafiyeti:** Uzaklık tabanlı çalışan ve `weights='distance'` (mesafeyle ters orantılı ağırlık) kullanan KNN modeli, test setindeki bir hastayı sınıflandırırken eğitim setinde bu hastanın **birebir kopyasını bulur ve mesafe tam 0.0 çıkar**.
+5. **Ezberleme (Memorization):** Mesafe sıfır çıktığı için model hiçbir örüntü öğrenmeden, sadece eğitim kümesindeki aynı hastanın etiketini doğrudan kopyalayarak test setine yapıştırır.
+
+### 🩺 Klinik Açıdan Değerlendirme
+* **Gerçekçi Doğruluk:** Mükerrer satırlar silindiğinde (bizim projemizde yaptığımız gibi 302 tekil hastada), KNN modelinin gerçek doğruluğu **%72 - %78** bandına gerilemektedir. 
+* **Öznitelik Kaybı:** Bu KNN modelinde yazar, p-değeri analiziyle **`age`** (yaş) ve **`fbs`** (açlık kan şekeri) parametrelerini anlamsız bularak modelden atmıştır. Ancak klinik dünyada 25 yaşındaki bir hastayla 75 yaşındaki bir hastanın kalp krizi riskinin aynı şekilde değerlendirilmesi veya şeker hastalığının (fbs) tamamen dışlanması tıbbi gerçeklikle uyuşmamaktadır.
+
+---
+
+## 📊 6. Üç Modelin Karşılaştırma Özeti
+
+| Kriter | Kaggle Random Forest Projesi | Kaggle KNN Projesi | Bizim Cardio-Shield CDSS |
+| :--- | :--- | :--- | :--- |
+| **Bildirilen Doğruluk** | %75.41 | %98.83 (Yanıltıcı) | **%84 - %88 (Gerçek ve Güvenilir)** |
+| **Metodolojik Durum** | Temiz (Tekil Veri) | **Hatalı (Veri Sızıntısı var)** | **Temiz ve Doğrulanmış (Veri Sızıntısı Yok)** |
+| **Klinik Yaklaşım** | Statik (Tek Aşamalı) | Statik (Tek Aşamalı) | **Dinamik 4 Aşamalı Eskalasyon** |
+| **Bütçe ve Girişimsel Koruma** | Yok ($595.00) | Yok ($595.00) | **Ortalama %72.8 Maliyet Tasarrufu** |
+
+---
+
+## 📈 7. Sonuç Değerlendirmesi
+
+Kaggle üzerindeki popüler projeler, makine öğrenmesini genellikle klinik bağlamdan kopuk, sadece matematiksel veya sentetik olarak şişirilmiş başarım oranları elde etmeye yönelik bir veri manipülasyon oyunu olarak ele almaktadır. KNN projesindeki **%98.83**'lük yanıltıcı doğruluk iddiası, gerçek dünya klinik uygulamalarında tamamen başarısız olacak bir **ezberleme (overfitting)** vakasıdır.
+
+Bizim geliştirdiğimiz **Cardio-Shield CDSS** ise:
+1. Veri sızıntılarını en başta önleyerek **dürüst ve bilimsel** bir doğruluk düzeyi yakalamıştır.
+2. Tıbbın finansal gerçeklerine uygun **Maliyet Duyarlı Kademeli Teşhis Mimarisi** sunmuştur.
+3. Hekime karar anında fizyolojik olarak **doğru yönlerde imzalanmış yerel SHAP açıklamaları** sunarak gerçek bir klinik ürün haline gelmiştir.
