@@ -1,0 +1,707 @@
+/* -------------------------------------------------------------
+   CARDIO-SHIELD PREMIUM CLINICAL DARK THEME & GLASSMORPHISM CSS
+   ------------------------------------------------------------- */
+
+/* Root Design Tokens */
+:root {
+    --bg-dark: #070B19;
+    --panel-bg: rgba(16, 25, 52, 0.55);
+    --panel-border: rgba(255, 255, 255, 0.07);
+    --panel-border-glow: rgba(72, 202, 228, 0.15);
+    
+    --text-primary: #F3F4F6;
+    --text-secondary: #9CA3AF;
+    --text-muted: #6B7280;
+
+    /* Clinical Neon Accents */
+    --accent-cyan: #48CAE4;
+    --accent-emerald: #06D6A0;
+    --accent-red: #E71D36;
+    --accent-gold: #E9C46A;
+    --accent-purple: #9B5DE5;
+    
+    --font-primary: 'Outfit', sans-serif;
+    --transition-smooth: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base resets & typography */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-dark);
+    background-image: 
+        radial-gradient(at 10% 20%, rgba(72, 202, 228, 0.05) 0px, transparent 50%),
+        radial-gradient(at 90% 80%, rgba(155, 93, 229, 0.05) 0px, transparent 50%);
+    font-family: var(--font-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 20px;
+    overflow-x: hidden;
+}
+
+/* Glassmorphic Panel Base styling */
+.glass-panel {
+    background: var(--panel-bg);
+    backdrop-filter: blur(16px) saturate(120%);
+    -webkit-backdrop-filter: blur(16px) saturate(120%);
+    border: 1px solid var(--panel-border);
+    border-radius: 18px;
+    padding: 24px;
+    transition: var(--transition-smooth);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel:hover {
+    border-color: rgba(72, 202, 228, 0.2);
+    box-shadow: 0 12px 40px 0 rgba(72, 202, 228, 0.08);
+}
+
+/* App Container Layout */
+.app-container {
+    max-width: 1500px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Main Header */
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background: rgba(16, 25, 52, 0.3);
+    border-radius: 15px;
+    border: 1px solid var(--panel-border);
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.heartbeat-icon {
+    font-size: 2.2rem;
+    color: var(--accent-red);
+    animation: pulse 1.4s infinite;
+}
+
+.logo-text h1 {
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.logo-text h1 span {
+    color: var(--accent-cyan);
+    text-shadow: 0 0 10px rgba(72, 202, 228, 0.4);
+}
+
+.logo-text p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.header-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(6, 214, 160, 0.1);
+    border: 1px solid rgba(6, 214, 160, 0.2);
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--accent-emerald);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent-emerald);
+    animation: statusPulse 1.8s infinite;
+}
+
+.status-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent-emerald);
+}
+
+/* Dashboard Responsive Layout Grid */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* Sidebar Controls styling */
+.sidebar-card {
+    height: calc(100vh - 120px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.sidebar-card::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-card::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 12px;
+}
+
+.card-header i {
+    font-size: 1.4rem;
+    color: var(--accent-cyan);
+}
+
+.card-header h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+/* Patient Form Sections */
+.form-section {
+    margin-bottom: 24px;
+}
+
+.form-section h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-section h3 i {
+    color: var(--accent-cyan);
+}
+
+/* Input Elements */
+.input-group {
+    margin-bottom: 16px;
+}
+
+.input-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.badge {
+    background: rgba(72, 202, 228, 0.12);
+    border: 1px solid rgba(72, 202, 228, 0.3);
+    color: var(--accent-cyan);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+/* Premium Range Sliders */
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(72, 202, 228, 0.8);
+    transition: transform 0.1s ease;
+}
+
+.slider::-webkit-slider-thumb:hover {
+    transform: scale(1.25);
+}
+
+/* Gender Toggle Buttons */
+.gender-selector {
+    display: flex;
+    gap: 10px;
+}
+
+.gender-btn {
+    flex: 1;
+    cursor: pointer;
+}
+
+.gender-btn input {
+    display: none;
+}
+
+.gender-btn span {
+    display: block;
+    text-align: center;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    transition: var(--transition-smooth);
+}
+
+.gender-btn input:checked + span {
+    background: rgba(72, 202, 228, 0.15);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(72, 202, 228, 0.1);
+}
+
+/* Styled Select Option Lists */
+.styled-select {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    font-size: 0.88rem;
+    outline: none;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.styled-select:focus {
+    border-color: var(--accent-cyan);
+    background: rgba(16, 25, 52, 0.8);
+}
+
+.styled-select option {
+    background-color: var(--bg-dark);
+    color: var(--text-primary);
+}
+
+/* Toggle Switch Styling */
+.toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 42px;
+    height: 22px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.08);
+    transition: .3s;
+    border-radius: 34px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--accent-cyan);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(20px);
+}
+
+/* Custom Submit/Run Buttons */
+.submit-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 15px rgba(72, 202, 228, 0.3);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(72, 202, 228, 0.5);
+    filter: brightness(1.1);
+}
+
+.submit-btn:active {
+    transform: translateY(1px);
+}
+
+/* Main Dashboard panels */
+.main-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Rows & Cards */
+.metrics-row {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+}
+
+.visuals-row {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+/* Risk Gauge wrapper styling */
+.gauge-wrapper {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    margin: 20px auto;
+}
+
+.gauge {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.gauge-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.05);
+    stroke-width: 8;
+}
+
+.gauge-fill {
+    fill: none;
+    stroke: var(--accent-cyan);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-dasharray: 283;
+    stroke-dashoffset: 283;
+    transition: stroke-dashoffset 1s ease-out;
+}
+
+.gauge-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#risk-percent {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: white;
+}
+
+#risk-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-top: 2px;
+}
+
+/* Advice obsidian callout box */
+.advice-card {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Dynamic colors based on risk status */
+.risk-low {
+    stroke: var(--accent-emerald) !important;
+}
+.risk-low-badge {
+    background: rgba(6, 214, 160, 0.15);
+    color: var(--accent-emerald);
+    border: 1px solid rgba(6, 214, 160, 0.3);
+}
+
+.risk-medium {
+    stroke: var(--accent-gold) !important;
+}
+.risk-medium-badge {
+    background: rgba(233, 196, 106, 0.15);
+    color: var(--accent-gold);
+    border: 1px solid rgba(233, 196, 106, 0.3);
+}
+
+.risk-high {
+    stroke: var(--accent-red) !important;
+}
+.risk-high-badge {
+    background: rgba(231, 29, 54, 0.15);
+    color: var(--accent-red);
+    border: 1px solid rgba(231, 29, 54, 0.3);
+    box-shadow: 0 0 10px rgba(231, 29, 54, 0.2);
+}
+
+/* Cost & Triage Panel */
+.cost-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.cost-stat-box {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.stat-title {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.4rem;
+    font-weight: 800;
+}
+
+/* Color codes */
+.text-cyan { color: var(--accent-cyan); text-shadow: 0 0 8px rgba(72, 202, 228, 0.2); }
+.text-emerald { color: var(--accent-emerald); text-shadow: 0 0 8px rgba(6, 214, 160, 0.2); }
+.text-gold { color: var(--accent-gold); text-shadow: 0 0 8px rgba(233, 196, 106, 0.2); }
+
+/* Escalation Stepper */
+.stepper-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stepper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 15px;
+    border-radius: 12px;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    transition: var(--transition-smooth);
+}
+
+.step-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    transition: var(--transition-smooth);
+}
+
+.step-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.step-connector {
+    height: 2px;
+    background: rgba(255, 255, 255, 0.05);
+    flex-grow: 1;
+    margin-bottom: 18px;
+    transition: var(--transition-smooth);
+}
+
+/* Active & Complete step styling */
+.step.active .step-icon {
+    background: rgba(72, 202, 228, 0.15);
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    box-shadow: 0 0 10px rgba(72, 202, 228, 0.3);
+}
+
+.step.active .step-label {
+    color: var(--accent-cyan);
+    font-weight: 700;
+}
+
+.step.complete .step-icon {
+    background: rgba(6, 214, 160, 0.15);
+    border-color: var(--accent-emerald);
+    color: var(--accent-emerald);
+}
+
+.step.complete .step-label {
+    color: var(--text-secondary);
+}
+
+.step-connector.complete {
+    background: var(--accent-emerald);
+}
+
+/* Visuals/Charts panel card styling */
+.chart-container {
+    position: relative;
+    height: 260px;
+    margin-top: 15px;
+}
+
+.chart-caption {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Benchmark Comparison Table */
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+    font-size: 0.85rem;
+}
+
+.styled-table th {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    text-align: left;
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-weight: 600;
+}
+
+.styled-table td {
+    padding: 10px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+}
+
+.styled-table tr:hover {
+    background: rgba(255, 255, 255, 0.01);
+}
+
+/* Pareto detail box styling */
+.pareto-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.pareto-metric {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.88rem;
+}
+
+.pareto-explanation p {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+/* Animation frames */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes statusPulse {
+    0% { box-shadow: 0 0 0 0 rgba(6, 214, 160, 0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(6, 214, 160, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(6, 214, 160, 0); }
+}
+
+/* General classes */
+.text-center { text-align: center; }
+.mt-1 { margin-top: 10px; }
+.mt-2 { margin-top: 20px; }
+.mb-1 { margin-bottom: 10px; }

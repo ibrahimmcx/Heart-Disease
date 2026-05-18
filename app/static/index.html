@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CARDIOSHIELD - Advanced Clinical Decision Support System</title>
+    
+    <!-- Premium Typography & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js and Vanilla CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Header Banner -->
+        <header class="main-header">
+            <div class="logo-area">
+                <i class="fa-solid fa-heart-pulse heartbeat-icon"></i>
+                <div class="logo-text">
+                    <h1>CARDIO<span>SHIELD</span></h1>
+                    <p>Clinical Intelligence & Staged Diagnostic Escalation Platform</p>
+                </div>
+            </div>
+            <div class="header-status">
+                <span class="pulse-dot"></span>
+                <span class="status-label">CDSS Engine Active</span>
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            
+            <!-- Sidebar Patient Intake Controls -->
+            <aside class="sidebar-card glass-panel">
+                <div class="card-header">
+                    <i class="fa-solid fa-clipboard-user"></i>
+                    <h2>Patient Intake Metrics</h2>
+                </div>
+                <form id="patient-form" class="patient-form">
+                    
+                    <!-- Section 1: Demographics -->
+                    <div class="form-section">
+                        <h3><i class="fa-solid fa-user-doctor"></i> Demographics</h3>
+                        
+                        <div class="input-group">
+                            <div class="input-label">
+                                <span>Age (Years)</span>
+                                <span id="age-val" class="badge">45</span>
+                            </div>
+                            <input type="range" id="age" min="20" max="80" value="45" class="slider">
+                        </div>
+
+                        <div class="input-group">
+                            <span class="input-label">Biological Sex</span>
+                            <div class="gender-selector">
+                                <label class="gender-btn">
+                                    <input type="radio" name="sex" value="0">
+                                    <span>Female</span>
+                                </label>
+                                <label class="gender-btn">
+                                    <input type="radio" name="sex" value="1" checked>
+                                    <span>Male</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Clinical Baseline -->
+                    <div class="form-section">
+                        <h3><i class="fa-solid fa-file-medical"></i> Baseline Metrics</h3>
+                        
+                        <div class="input-group">
+                            <span class="input-label">Chest Pain Classification (cp)</span>
+                            <select id="cp" class="styled-select">
+                                <option value="0">0: Typical Angina</option>
+                                <option value="1">1: Atypical Angina</option>
+                                <option value="2" selected>2: Non-Anginal Pain</option>
+                                <option value="3">3: Asymptomatic</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">
+                                <span>Resting Blood Pressure (mmHg)</span>
+                                <span id="trestbps-val" class="badge">120</span>
+                            </div>
+                            <input type="range" id="trestbps" min="80" max="200" value="120" class="slider">
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">
+                                <span>Serum Cholesterol (mg/dL)</span>
+                                <span id="chol-val" class="badge">220</span>
+                            </div>
+                            <input type="range" id="chol" min="120" max="450" value="220" class="slider">
+                        </div>
+
+                        <div class="input-group toggle-row">
+                            <span class="input-label">Fasting Blood Sugar > 120 mg/dl</span>
+                            <label class="switch">
+                                <input type="checkbox" id="fbs" value="1">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Diagnostic Findings -->
+                    <div class="form-section">
+                        <h3><i class="fa-solid fa-wave-square"></i> Cardiac Tests</h3>
+                        
+                        <div class="input-group">
+                            <span class="input-label">Resting Electrocardiogram (restecg)</span>
+                            <select id="restecg" class="styled-select">
+                                <option value="0">0: Normal</option>
+                                <option value="1" selected>1: ST-T Wave Abnormality</option>
+                                <option value="2">2: Left Ventricular Hypertrophy</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">
+                                <span>Max Heart Rate (thalach)</span>
+                                <span id="thalach-val" class="badge">150</span>
+                            </div>
+                            <input type="range" id="thalach" min="60" max="220" value="150" class="slider">
+                        </div>
+
+                        <div class="input-group toggle-row">
+                            <span class="input-label">Exercise Induced Angina</span>
+                            <label class="switch">
+                                <input type="checkbox" id="exang" value="1">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label">
+                                <span>ST Depression (oldpeak mm)</span>
+                                <span id="oldpeak-val" class="badge">1.0</span>
+                            </div>
+                            <input type="range" id="oldpeak" min="0" max="6.2" step="0.1" value="1.0" class="slider">
+                        </div>
+
+                        <div class="input-group">
+                            <span class="input-label">Peak Exercise ST Slope</span>
+                            <select id="slope" class="styled-select">
+                                <option value="0">0: Upsloping</option>
+                                <option value="1" selected>1: Flat</option>
+                                <option value="2">2: Downsloping</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <span class="input-label">Fluoroscopy Major Vessels (ca)</span>
+                            <select id="ca" class="styled-select">
+                                <option value="0" selected>0 Vessels</option>
+                                <option value="1">1 Vessel</option>
+                                <option value="2">2 Vessels</option>
+                                <option value="3">3 Vessels</option>
+                                <option value="4">4 Vessels (Unclassified)</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group">
+                            <span class="input-label">SPECT Thalassemia Scintigraphy</span>
+                            <select id="thal" class="styled-select">
+                                <option value="1">1: Normal</option>
+                                <option value="2" selected>2: Fixed Defect</option>
+                                <option value="3">3: Reversible Defect</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="button" id="submit-btn" class="submit-btn">
+                        <i class="fa-solid fa-shield-heart"></i> Calculate Risk Index
+                    </button>
+                </form>
+            </aside>
+
+            <!-- Main Interactive Analytics Dashboard -->
+            <main class="main-dashboard">
+                
+                <!-- Row 1: Primary Outcome Gauge & Staged Cost Meter -->
+                <div class="metrics-row">
+                    
+                    <!-- Glassmorphic Gauge Card -->
+                    <div class="metric-card glass-panel text-center">
+                        <h3>Diagnostic Risk Probability</h3>
+                        <div class="gauge-wrapper">
+                            <svg class="gauge" viewBox="0 0 100 100">
+                                <circle class="gauge-bg" cx="50" cy="50" r="45"></circle>
+                                <circle id="gauge-fill" class="gauge-fill" cx="50" cy="50" r="45" style="stroke-dashoffset: 282;"></circle>
+                            </svg>
+                            <div class="gauge-text">
+                                <span id="risk-percent">--%</span>
+                                <small id="risk-badge">Awaiting Data</small>
+                            </div>
+                        </div>
+                        <div class="advice-card mt-1">
+                            <p id="advice-text">Select clinical parameters and click "Calculate Risk Index" to trigger staged escalations.</p>
+                        </div>
+                    </div>
+
+                    <!-- Staged Diagnosis Cost Efficiency Card -->
+                    <div class="metric-card glass-panel cost-summary-card">
+                        <h3>Cost-Sensitive Diagnostic Triage</h3>
+                        <div class="cost-stat-grid">
+                            <div class="cost-stat-box">
+                                <span class="stat-title">Stage Reached</span>
+                                <span id="stage-val-text" class="stat-value text-cyan">--</span>
+                            </div>
+                            <div class="cost-stat-box">
+                                <span class="stat-title">Diagnostic Cost</span>
+                                <span id="cost-val-text" class="stat-value text-emerald">$--</span>
+                            </div>
+                            <div class="cost-stat-box">
+                                <span class="stat-title">Hospital Budget Saved</span>
+                                <span id="savings-val-text" class="stat-value text-gold">--%</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Escalation Path Stepper Viz -->
+                        <div class="stepper-title mt-2">Staged Diagnostic Escalation Log</div>
+                        <div id="stepper-container" class="stepper">
+                            <div class="step disabled">
+                                <div class="step-icon"><i class="fa-solid fa-user-nurse"></i></div>
+                                <span class="step-label">Stage 1</span>
+                            </div>
+                            <div class="step-connector"></div>
+                            <div class="step disabled">
+                                <div class="step-icon"><i class="fa-solid fa-hospital-user"></i></div>
+                                <span class="step-label">Stage 2</span>
+                            </div>
+                            <div class="step-connector"></div>
+                            <div class="step disabled">
+                                <div class="step-icon"><i class="fa-solid fa-wave-square"></i></div>
+                                <span class="step-label">Stage 3</span>
+                            </div>
+                            <div class="step-connector"></div>
+                            <div class="step disabled">
+                                <div class="step-icon"><i class="fa-solid fa-stethoscope"></i></div>
+                                <span class="step-label">Stage 4</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Explainable AI Local Feature Contributions -->
+                <div class="visuals-row">
+                    <div class="visual-card glass-panel">
+                        <div class="card-header">
+                            <i class="fa-solid fa-chart-bar text-cyan"></i>
+                            <h3>Explainable AI (XAI) - Local Feature Risk Contributions (SHAP Values)</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="shap-chart"></canvas>
+                        </div>
+                        <p class="chart-caption"><i class="fa-solid fa-circle-info"></i> Values represent individual clinical feature impact on increasing (red) or decreasing (blue) this patient's cardiac risk profile.</p>
+                    </div>
+                </div>
+
+                <!-- Row 3: Global System Performance & Pareto Frontier -->
+                <div class="metrics-row">
+                    <div class="metric-card glass-panel">
+                        <div class="card-header">
+                            <i class="fa-solid fa-ranking-star text-gold"></i>
+                            <h3>CDSS Multi-Model Performance</h3>
+                        </div>
+                        <table class="styled-table">
+                            <thead>
+                                <tr>
+                                    <th>Model Class</th>
+                                    <th>Accuracy</th>
+                                    <th>Precision</th>
+                                    <th>Recall (Sensitivity)</th>
+                                    <th>F1-Score</th>
+                                    <th>ROC-AUC</th>
+                                </tr>
+                            </thead>
+                            <tbody id="metrics-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center">Loading benchmark data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="metric-card glass-panel">
+                        <div class="card-header">
+                            <i class="fa-solid fa-scale-balanced text-emerald"></i>
+                            <h3>Pareto Cost-Benefit Analysis</h3>
+                        </div>
+                        <div class="pareto-stats">
+                            <div class="pareto-metric">
+                                <strong>Staged Escalation Average Cost:</strong>
+                                <span id="pareto-avg-cost" class="text-emerald">$---</span>
+                            </div>
+                            <div class="pareto-metric">
+                                <strong>Average Budget Saved:</strong>
+                                <span id="pareto-savings" class="text-gold">--%</span>
+                            </div>
+                            <div class="pareto-metric">
+                                <strong>Clinical Decision Certainty:</strong>
+                                <span class="text-cyan">91.18% Accuracy</span>
+                            </div>
+                        </div>
+                        <div class="pareto-explanation mt-1">
+                            <p>Our Staged Escalation protocol achieves **91.18% holdout accuracy** while saving **72.8%** of unnecessary diagnostic expenses! Most healthy or obvious patients are successfully diagnosed at Stage 1 ($30), while expensive diagnostic testing ($990) is strictly reserved for complex, borderline patients.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Script to orchestrate Dashboard Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
