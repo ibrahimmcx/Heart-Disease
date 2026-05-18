@@ -40,3 +40,9 @@ venv.bak/
 # IDEs
 .vscode/
 .idea/
+
+# Local Dev Scratch Files
+scratch_robust_test.py
+scratch_robust_test_8001.py
+test_client.py
+
