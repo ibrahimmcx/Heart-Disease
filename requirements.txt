@@ -1,6 +1,8 @@
-fastapi
-uvicorn
+﻿fastapi
+uvicorn[standard]
 pydantic
 numpy
 pandas
 joblib
+scikit-learn
+python-multipart
