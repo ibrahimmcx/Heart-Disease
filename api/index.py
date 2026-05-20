@@ -79,13 +79,13 @@ try:
 except Exception as e:
     print(f"[API] ERROR: {e}")
 
-# ── Routes (NO /api/ prefix — Vercel adds it via /api/index routing) ──────────
-@app.get("/health")
+# ── Routes ──────────
+@app.get("/api/health")
 def health_check():
     return {"status": "healthy", "pipeline_active": True}
 
 
-@app.get("/metrics")
+@app.get("/api/metrics")
 def get_model_metrics():
     if not os.path.exists(METRICS_PATH):
         raise HTTPException(status_code=404, detail="Metrics file not found.")
@@ -93,7 +93,7 @@ def get_model_metrics():
     return df.to_dict(orient="records")
 
 
-@app.get("/cost-summary")
+@app.get("/api/cost-summary")
 def get_cost_summary():
     if cost_summary is not None:
         return cost_summary
@@ -102,7 +102,7 @@ def get_cost_summary():
     raise HTTPException(status_code=404, detail="Cost summary not found.")
 
 
-@app.post("/predict")
+@app.post("/api/predict")
 def predict_cardiac_risk(patient: PatientData):
     if scaler is None or escalation_models_metadata is None or explainability_metadata is None:
         raise HTTPException(status_code=500, detail="Models not loaded.")
