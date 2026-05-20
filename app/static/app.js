@@ -6,17 +6,17 @@ let shapChart = null;
 let paretoChart = null;
 let globalCostSummary = null;
 
-// Determine backend API Base URL:
-//   - Local file system  → local uvicorn
-//   - Vercel production  → Render backend
-//   - Same-origin dev    → relative (empty string)
-const RENDER_BACKEND = "https://cardio-shield-api.onrender.com";
-
-const API_BASE = (window.location.protocol === "file:" || window.location.origin === "null")
-    ? "http://127.0.0.1:8001"
-    : window.location.hostname.includes("vercel.app")
-        ? RENDER_BACKEND
+// Determine backend API Base URL.
+// Priority: 1) config.js RENDER_API_URL (production Render)
+//           2) Local file:// → localhost dev server
+//           3) Vercel/same-origin (empty string)
+const API_BASE = (typeof APP_CONFIG !== "undefined" && APP_CONFIG.RENDER_API_URL)
+    ? APP_CONFIG.RENDER_API_URL
+    : (window.location.protocol === "file:" || window.location.origin === "null")
+        ? "http://127.0.0.1:8001"
         : "";
+
+
 
 
 document.addEventListener("DOMContentLoaded", () => {
