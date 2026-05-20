@@ -6,11 +6,17 @@ let shapChart = null;
 let paretoChart = null;
 let globalCostSummary = null;
 
-// Determine backend API Base URL based on page origin.
-// Enables double-clicking index.html directly from local folder.
-const API_BASE = (window.location.protocol === "file:" || window.location.origin === "null") 
-    ? "http://127.0.0.1:8001" 
-    : "";
+// Determine backend API Base URL:
+//   - Local file system  → local uvicorn
+//   - Vercel production  → Render backend
+//   - Same-origin dev    → relative (empty string)
+const RENDER_BACKEND = "https://cardio-shield-api.onrender.com";
+
+const API_BASE = (window.location.protocol === "file:" || window.location.origin === "null")
+    ? "http://127.0.0.1:8001"
+    : window.location.hostname.includes("vercel.app")
+        ? RENDER_BACKEND
+        : "";
 
 
 document.addEventListener("DOMContentLoaded", () => {
