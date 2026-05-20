@@ -9,6 +9,7 @@ from pure_ml import (
     PureStandardScaler,
     PureLogisticRegression,
     PureRandomForestClassifier,
+    PureGradientBoostingClassifier,
     pure_roc_auc_score
 )
 from data_preprocessing import CONTINUOUS_FEATURES, CATEGORICAL_FEATURES
@@ -101,8 +102,8 @@ def run_cost_aware_simulation():
         X_tr = X_train_np[:, sub_indices]
         X_te = X_test_np[:, sub_indices]
         
-        # Fit a pure Random Forest for each variant
-        model = PureRandomForestClassifier(n_estimators=30, max_depth=5, random_state=42)
+        # Fit a pure Gradient Boosting for each variant
+        model = PureGradientBoostingClassifier(n_estimators=30, max_depth=3, random_state=42)
         model.fit(X_tr, y_train_np)
         
         probs = model.predict_proba(X_te)[:, 1]
@@ -145,7 +146,7 @@ def run_cost_aware_simulation():
     for stage_name, stage_feats in STAGE_FEATURES.items():
         sub_indices = [features.index(f) for f in stage_feats]
         X_tr = X_train_np[:, sub_indices]
-        model = PureRandomForestClassifier(n_estimators=30, max_depth=5, random_state=42)
+        model = PureGradientBoostingClassifier(n_estimators=30, max_depth=3, random_state=42)
         model.fit(X_tr, y_train_np)
         stage_models[stage_name] = {
             'model': model,

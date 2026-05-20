@@ -11,8 +11,9 @@ from pydantic import BaseModel
 # Ensure 'src/' is in python path
 sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'src'))
 
-from pure_ml import PureStandardScaler, PureRandomForestClassifier
+from pure_ml import PureStandardScaler, PureRandomForestClassifier, PureGradientBoostingClassifier
 from data_preprocessing import CONTINUOUS_FEATURES, CATEGORICAL_FEATURES
+from explainability import compute_single_patient_shap
 
 app = FastAPI(
     title="Cardiovascular Decision Support System API",
@@ -45,8 +46,9 @@ class PatientData(BaseModel):
     ca: float
     thal: float
 
-# Paths to models
-MODELS_DIR = "models"
+# Paths to models (made absolute relative to app root to guarantee Vercel compatibility)
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+MODELS_DIR = os.path.join(os.path.dirname(APP_DIR), "models")
 SCALER_PATH = os.path.join(MODELS_DIR, "scaler.joblib")
 EXPLAIN_META_PATH = os.path.join(MODELS_DIR, "explainability_metadata.joblib")
 COST_SUMMARY_PATH = os.path.join(MODELS_DIR, "cost_analysis_summary.joblib")
@@ -200,31 +202,33 @@ def predict_cardiac_risk(patient: PatientData):
     # Get scaled values of utilized features
     utilized_values_scaled = scaled_patient_array[final_indices]
     
-    # Define Pearson correlation signs with target (1=Healthy, 0=Sick)
-    # A negative correlation with target means higher values of this feature increase cardiac risk.
-    FEATURE_CORR_SIGNS = {
-        'age': -1, 'sex': -1, 'cp': 1, 'trestbps': -1, 'chol': -1, 'fbs': -1,
-        'restecg': 1, 'slope': 1, 'thalach': 1, 'exang': -1, 'oldpeak': -1, 'ca': -1, 'thal': -1
-    }
+    # Get background means (which are all 0.0 in the scaled feature space)
+    background_means_scaled = np.zeros(len(scaled_patient_array))
     
-    # Map to structured responses with raw values for clinician display
+    # Compute patient-specific true Shapley values for the active features
+    patient_shap = compute_single_patient_shap(
+        model=meta_final['model'],
+        patient_scaled=scaled_patient_array,
+        active_indices=final_indices,
+        background_means=background_means_scaled,
+        n_samples=500
+    )
+    
+    # Map to structured responses with raw values for clinician display.
+    # We negate the Shapley values to represent contribution to CARDIAC RISK (class 0, heart disease).
     explanations = []
     for f, idx in zip(final_features, final_indices):
         raw_val = raw_patient_dict[f]
         scaled_val = scaled_patient_array[idx]
-        imp = explainability_metadata["importances"][idx]
         
-        # Compute local risk contribution with correct clinical direction:
-        # If correlation with target is negative (-1), positive scaled values increase risk.
-        # If correlation with target is positive (1), positive scaled values decrease risk.
-        multiplier = 1.0 if FEATURE_CORR_SIGNS.get(f, -1) < 0 else -1.0
-        contrib = scaled_val * imp * multiplier
+        # Negate the healthy-probability Shapley value to get risk-probability contribution
+        risk_contrib = -patient_shap[idx]
         
         explanations.append({
             "feature": f.upper(),
             "raw_value": float(raw_val),
             "scaled_value": float(scaled_val),
-            "risk_impact": float(contrib),
+            "risk_impact": float(risk_contrib),
             "cost": CLINICAL_COSTS[f]
         })
         

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from pure_ml import (
     PureLogisticRegression,
     PureRandomForestClassifier,
+    PureGradientBoostingClassifier,
     pure_stratified_kfold,
     pure_grid_search_cv,
     pure_roc_auc_score,
@@ -72,6 +73,14 @@ def train_and_tune_models(X_train, X_test, y_train, y_test, random_state=42, mod
                 "n_estimators": [30, 50],
                 "max_depth": [5, 8],
                 "min_samples_split": [2, 5]
+            }
+        },
+        "Gradient_Boosting": {
+            "class": PureGradientBoostingClassifier,
+            "grid": {
+                "n_estimators": [30, 50],
+                "learning_rate": [0.05, 0.1],
+                "max_depth": [3, 5]
             }
         }
     }
@@ -146,7 +155,7 @@ def train_and_tune_models(X_train, X_test, y_train, y_test, random_state=42, mod
     
     # 5. Plot Combined ROC Curves
     plt.figure(figsize=(8, 7))
-    colors = {"Logistic_Regression": "#2a9d8f", "Random_Forest": "#f4a261"}
+    colors = {"Logistic_Regression": "#2a9d8f", "Random_Forest": "#f4a261", "Gradient_Boosting": "#e76f51"}
     
     for name, (fpr, tpr, auc) in roc_curves_data.items():
         plt.plot(fpr, tpr, color=colors[name], lw=2, label=f'{name.replace("_", " ")} (AUC = {auc:.4f})')

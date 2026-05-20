@@ -304,11 +304,14 @@
                             </div>
                             <div class="pareto-metric">
                                 <strong>Clinical Decision Certainty:</strong>
-                                <span class="text-cyan">91.18% Accuracy</span>
+                                <span id="pareto-accuracy" class="text-cyan">--% Accuracy</span>
                             </div>
                         </div>
+                        <div class="chart-container mt-1" style="height: 220px; position: relative; margin-bottom: 10px;">
+                            <canvas id="pareto-chart"></canvas>
+                        </div>
                         <div class="pareto-explanation mt-1">
-                            <p>Our Staged Escalation protocol achieves **91.18% holdout accuracy** while saving **72.8%** of unnecessary diagnostic expenses! Most healthy or obvious patients are successfully diagnosed at Stage 1 ($30), while expensive diagnostic testing ($990) is strictly reserved for complex, borderline patients.</p>
+                            <p>Our Staged Escalation protocol achieves optimized clinical accuracy while saving a massive percentage of unnecessary diagnostic expenses! Most healthy or obvious patients are successfully diagnosed at early stages, while expensive diagnostic testing is strictly reserved for complex, borderline patients.</p>
                         </div>
                     </div>
                 </div>
