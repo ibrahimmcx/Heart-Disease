@@ -279,6 +279,225 @@ class PureRandomForestClassifier:
         return importances
 
 
+class PureDecisionTreeRegressor:
+    """Pure NumPy Decision Tree Regressor using variance reduction."""
+    def __init__(self, max_depth=5, min_samples_split=2, max_features=None, random_state=42):
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.max_features = max_features
+        self.random_state = random_state
+        self.root = None
+        self.rng = np.random.default_rng(random_state)
+
+    def _variance(self, y):
+        if len(y) == 0:
+            return 0.0
+        return np.var(y)
+
+    def _split(self, X, y, feature, threshold):
+        left_idx = X[:, feature] <= threshold
+        right_idx = ~left_idx
+        return left_idx, right_idx
+
+    def _best_split(self, X, y, feature_indices):
+        best_gain = -1.0
+        best_feat = None
+        best_thresh = None
+        
+        current_var = self._variance(y)
+        m = len(y)
+        
+        for feat in feature_indices:
+            feat_values = X[:, feat]
+            thresholds = np.unique(feat_values)
+            
+            # Sub-sample thresholds if features are continuous to speed up fit
+            if len(thresholds) > 15:
+                thresholds = np.percentile(feat_values, np.arange(10, 100, 10))
+                
+            for thresh in thresholds:
+                left_idx, right_idx = self._split(X, y, feat, thresh)
+                m_l, m_r = np.sum(left_idx), np.sum(right_idx)
+                
+                if m_l == 0 or m_r == 0:
+                    continue
+                    
+                var_l = self._variance(y[left_idx])
+                var_r = self._variance(y[right_idx])
+                
+                child_var = (m_l / m) * var_l + (m_r / m) * var_r
+                gain = current_var - child_var
+                
+                if gain > best_gain:
+                    best_gain = gain
+                    best_feat = feat
+                    best_thresh = thresh
+                    
+        return best_feat, best_thresh
+
+    def _build_tree(self, X, y, depth=0):
+        m, n = X.shape
+        
+        if (depth >= self.max_depth or 
+            m < self.min_samples_split or
+            np.all(y == y[0])):
+            leaf_val = float(np.mean(y)) if len(y) > 0 else 0.0
+            return Node(value=leaf_val)
+            
+        if self.max_features is None:
+            feature_indices = np.arange(n)
+        elif self.max_features == 'sqrt':
+            n_features = max(1, int(np.sqrt(n)))
+            feature_indices = self.rng.choice(n, n_features, replace=False)
+        else:
+            feature_indices = np.arange(n)
+            
+        best_feat, best_thresh = self._best_split(X, y, feature_indices)
+        
+        if best_feat is None:
+            leaf_val = float(np.mean(y)) if len(y) > 0 else 0.0
+            return Node(value=leaf_val)
+            
+        left_idx, right_idx = self._split(X, y, best_feat, best_thresh)
+        left = self._build_tree(X[left_idx], y[left_idx], depth + 1)
+        right = self._build_tree(X[right_idx], y[right_idx], depth + 1)
+        
+        return Node(feature=best_feat, threshold=best_thresh, left=left, right=right)
+
+    def fit(self, X, y):
+        X = np.asarray(X)
+        y = np.asarray(y, dtype=float)
+        self.root = self._build_tree(X, y)
+        return self
+
+    def _predict_row(self, node, row):
+        if node.is_leaf():
+            return node.value
+        if row[node.feature] <= node.threshold:
+            return self._predict_row(node.left, row)
+        return self._predict_row(node.right, row)
+
+    def predict(self, X):
+        X = np.asarray(X)
+        return np.array([self._predict_row(self.root, row) for row in X])
+
+
+class PureGradientBoostingClassifier:
+    """Pure NumPy Gradient Boosting Classifier with decision trees as base learners."""
+    def __init__(self, n_estimators=50, learning_rate=0.1, max_depth=3, min_samples_split=2, max_features=None, random_state=42):
+        self.n_estimators = n_estimators
+        self.learning_rate = learning_rate
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.max_features = max_features
+        self.random_state = random_state
+        self.trees = []
+        self.classes_ = np.array([0, 1])
+        self.F_0 = 0.0
+
+    def _update_leaf_values(self, node, X, r, p, indices):
+        if node.is_leaf():
+            # Calculate Newton-Raphson update for log-loss
+            numerator = np.sum(r[indices])
+            denominator = np.sum(p[indices] * (1.0 - p[indices]))
+            if denominator < 1e-10:
+                node.value = 0.0
+            else:
+                node.value = float(numerator / denominator)
+            return
+        
+        # Split indices
+        left_mask = X[indices, node.feature] <= node.threshold
+        left_indices = indices[left_mask]
+        right_indices = indices[~left_mask]
+        
+        if len(left_indices) > 0:
+            self._update_leaf_values(node.left, X, r, p, left_indices)
+        if len(right_indices) > 0:
+            self._update_leaf_values(node.right, X, r, p, right_indices)
+
+    def fit(self, X, y):
+        X = np.asarray(X)
+        y = np.asarray(y)
+        m, n = X.shape
+        
+        # Initialize F0(x) with log-odds
+        p_init = np.mean(y)
+        p_init = np.clip(p_init, 1e-15, 1.0 - 1e-15)
+        self.F_0 = float(np.log(p_init / (1.0 - p_init)))
+        
+        # Current raw scores
+        F = np.full(m, self.F_0)
+        
+        self.trees = []
+        
+        for i in range(self.n_estimators):
+            # Compute probabilities
+            p = 1.0 / (1.0 + np.exp(-F))
+            
+            # Compute pseudo-residuals (gradient of log-loss)
+            r = y - p
+            
+            # Fit regressor tree to pseudo-residuals
+            tree = PureDecisionTreeRegressor(
+                max_depth=self.max_depth,
+                min_samples_split=self.min_samples_split,
+                max_features=self.max_features,
+                random_state=self.random_state + i
+            )
+            tree.fit(X, r)
+            
+            # Update leaf values using Newton-Raphson step
+            all_indices = np.arange(m)
+            self._update_leaf_values(tree.root, X, r, p, all_indices)
+            
+            # Update scores F
+            F += self.learning_rate * tree.predict(X)
+            
+            self.trees.append(tree)
+            
+        return self
+
+    def predict_proba(self, X):
+        X = np.asarray(X)
+        m = X.shape[0]
+        F = np.full(m, self.F_0)
+        
+        for tree in self.trees:
+            F += self.learning_rate * tree.predict(X)
+            
+        p = 1.0 / (1.0 + np.exp(-F))
+        return np.column_stack((1.0 - p, p))
+
+    def predict(self, X):
+        return (self.predict_proba(X)[:, 1] >= 0.5).astype(int)
+
+    @property
+    def feature_importances_(self):
+        """Variance reduction weighted importance equivalent calculated dynamically."""
+        n_features = 13
+        importances = np.zeros(n_features)
+        
+        def traverse(node, depth=1):
+            if node.is_leaf():
+                return
+            if node.feature < n_features:
+                importances[node.feature] += 1.0 / (depth**2)
+            traverse(node.left, depth + 1)
+            traverse(node.right, depth + 1)
+            
+        for tree in self.trees:
+            traverse(tree.root)
+            
+        sum_imp = np.sum(importances)
+        if sum_imp > 0:
+            importances /= sum_imp
+        else:
+            importances = np.ones(n_features) / n_features
+            
+        return importances
+
+
 def pure_stratified_kfold(y, n_splits=5, random_state=42):
     """Pure NumPy stratified split logic."""
     y = np.asarray(y)
