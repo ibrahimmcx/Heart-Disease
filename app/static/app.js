@@ -17,6 +17,8 @@ const API_BASE = (typeof APP_CONFIG !== "undefined" && APP_CONFIG.RENDER_API_URL
         : "";
 
 
+
+
 document.addEventListener("DOMContentLoaded", () => {
     // 1. Initialize Dynamic Form Badge Value Listeners
     setupSliderListeners();
