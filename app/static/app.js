@@ -6,11 +6,15 @@ let shapChart = null;
 let paretoChart = null;
 let globalCostSummary = null;
 
-// Determine backend API Base URL based on page origin.
-// Enables double-clicking index.html directly from local folder.
-const API_BASE = (window.location.protocol === "file:" || window.location.origin === "null") 
-    ? "http://127.0.0.1:8001" 
-    : "";
+// Determine backend API Base URL.
+// Priority: 1) config.js RENDER_API_URL (production Render)
+//           2) Local file:// → localhost dev server
+//           3) Vercel/same-origin (empty string)
+const API_BASE = (typeof APP_CONFIG !== "undefined" && APP_CONFIG.RENDER_API_URL)
+    ? APP_CONFIG.RENDER_API_URL
+    : (window.location.protocol === "file:" || window.location.origin === "null")
+        ? "http://127.0.0.1:8001"
+        : "";
 
 
 document.addEventListener("DOMContentLoaded", () => {
