@@ -78,33 +78,30 @@ STAGE_FEATURES = {
 }
 
 
-@app.on_event("startup")
-def startup_event():
-    """Loads all custom serialized machine learning components on server startup."""
-    global scaler, explainability_metadata, cost_summary, escalation_models_metadata
-    
-    print("[BACKEND] Loading clinical intelligence models...")
-    try:
-        if os.path.exists(SCALER_PATH):
-            scaler = joblib.load(SCALER_PATH)
-            print("  - Fitted Scaler loaded.")
-        else:
-            print("  - WARNING: Scaler file not found.")
-            
-        if os.path.exists(EXPLAIN_META_PATH):
-            explainability_metadata = joblib.load(EXPLAIN_META_PATH)
-            print("  - Explainability metadata loaded.")
-            
-        if os.path.exists(COST_SUMMARY_PATH):
-            cost_summary = joblib.load(COST_SUMMARY_PATH)
-            print("  - Cost analysis summary loaded.")
-            
-        if os.path.exists(ESCALATION_MODELS_PATH):
-            escalation_models_metadata = joblib.load(ESCALATION_MODELS_PATH)
-            print("  - Staged escalation models metadata loaded.")
-            
-    except Exception as e:
-        print(f"[BACKEND] ERROR loading serialized components: {str(e)}")
+# Loads all custom serialized machine learning components on module import
+# (guarantees readiness in serverless environments like Vercel)
+print("[BACKEND] Loading clinical intelligence models on import...")
+try:
+    if os.path.exists(SCALER_PATH):
+        scaler = joblib.load(SCALER_PATH)
+        print("  - Fitted Scaler loaded.")
+    else:
+        print("  - WARNING: Scaler file not found.")
+        
+    if os.path.exists(EXPLAIN_META_PATH):
+        explainability_metadata = joblib.load(EXPLAIN_META_PATH)
+        print("  - Explainability metadata loaded.")
+        
+    if os.path.exists(COST_SUMMARY_PATH):
+        cost_summary = joblib.load(COST_SUMMARY_PATH)
+        print("  - Cost analysis summary loaded.")
+        
+    if os.path.exists(ESCALATION_MODELS_PATH):
+        escalation_models_metadata = joblib.load(ESCALATION_MODELS_PATH)
+        print("  - Staged escalation models metadata loaded.")
+        
+except Exception as e:
+    print(f"[BACKEND] ERROR loading serialized components: {str(e)}")
 
 
 @app.get("/api/health")
