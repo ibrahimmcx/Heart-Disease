@@ -3,37 +3,154 @@ import joblib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import math
+import itertools
 
 # Import pure custom ML elements
 from pure_ml import PureStandardScaler
 from data_preprocessing import CONTINUOUS_FEATURES, CATEGORICAL_FEATURES
 
+def compute_single_patient_shap(model, patient_scaled, active_indices, background_means, n_samples=1000):
+    """
+    Computes mathematically rigorous Shapley values for a single patient's active features.
+    If the number of active features is <= 10, computes Exact Shapley.
+    Otherwise, uses KernelSHAP to approximate Shapley values.
+    
+    Returns:
+        shap_values: dictionary mapping feature index to its Shapley value (contribution to class 1 / Healthy)
+    """
+    k = len(active_indices)
+    x = patient_scaled[active_indices]
+    b = background_means[active_indices]
+    
+    # Define model prediction function for a coalition mask
+    def predict_coalition_batch(masks):
+        # masks is shape (N, k)
+        # Reconstruct full-feature vector for the model
+        full_inputs = np.tile(background_means, (len(masks), 1))
+        for idx, active_idx in enumerate(active_indices):
+            full_inputs[:, active_idx] = masks[:, idx] * x[idx] + (1 - masks[:, idx]) * b[idx]
+        
+        # Predict probability of class 1 (Healthy)
+        return model.predict_proba(full_inputs)[:, 1]
+
+    if k <= 10:
+        # Exact Shapley calculation
+        # Generate all coalitions
+        coalitions = np.array(list(itertools.product([0, 1], repeat=k)))
+        probs = predict_coalition_batch(coalitions)
+        
+        # Map coalition mask tuple to prediction
+        pred_map = {tuple(mask): prob for mask, prob in zip(coalitions, probs)}
+        
+        shap_values = np.zeros(k)
+        for i in range(k):
+            # Loop over all subsets of features excluding i
+            other_indices = [j for j in range(k) if j != i]
+            # Subsets can be represented as binary masks of size k-1
+            for sub_mask in itertools.product([0, 1], repeat=k-1):
+                # Construct mask S (without i) and S_u_i (with i)
+                S = np.zeros(k, dtype=int)
+                for idx, val in zip(other_indices, sub_mask):
+                    S[idx] = val
+                
+                S_u_i = S.copy()
+                S_u_i[i] = 1
+                
+                # Weight
+                sz = int(np.sum(S))
+                weight = math.factorial(sz) * math.factorial(k - sz - 1) / math.factorial(k)
+                
+                diff = pred_map[tuple(S_u_i)] - pred_map[tuple(S)]
+                shap_values[i] += weight * diff
+    else:
+        # KernelSHAP approximation
+        rng = np.random.default_rng(42)
+        
+        # Sample coalitions
+        sampled_masks = []
+        weights = []
+        
+        # Exact empty and full masks
+        sampled_masks.append(np.zeros(k, dtype=int))
+        weights.append(1e6) # High weight to enforce constraint
+        
+        sampled_masks.append(np.ones(k, dtype=int))
+        weights.append(1e6)
+        
+        # We need to sample other coalitions
+        for _ in range(n_samples - 2):
+            sz = rng.integers(1, k)
+            active_feats = rng.choice(k, sz, replace=False)
+            mask = np.zeros(k, dtype=int)
+            mask[active_feats] = 1
+            
+            # Compute KernelSHAP weight
+            comb = math.comb(k, sz)
+            weight = (k - 1) / (comb * sz * (k - sz))
+            
+            sampled_masks.append(mask)
+            weights.append(weight)
+            
+        sampled_masks = np.array(sampled_masks)
+        weights = np.array(weights)
+        
+        # Predict on all sampled coalitions
+        probs = predict_coalition_batch(sampled_masks)
+        
+        # Weighted linear regression: Y = Z * Beta
+        f_empty = probs[0]
+        f_full = probs[1]
+        
+        Y = probs[2:] - f_empty
+        Z = sampled_masks[2:]
+        W = weights[2:]
+        
+        # Solve WLS: Z_w = sqrt(W) * Z, Y_w = sqrt(W) * Y
+        sqrt_W = np.sqrt(W)[:, np.newaxis]
+        Z_w = Z * sqrt_W
+        Y_w = Y * np.sqrt(W)
+        
+        # Solve using NumPy lstsq
+        shap_values, _, _, _ = np.linalg.lstsq(Z_w, Y_w, rcond=None)
+        
+        # Normalize to enforce sum(shap_values) == f_full - f_empty (Efficiency constraint)
+        actual_sum = np.sum(shap_values)
+        target_sum = f_full - f_empty
+        if abs(actual_sum) > 1e-10:
+            shap_values = shap_values * (target_sum / actual_sum)
+        else:
+            shap_values = np.zeros(k)
+            
+    # Map back to full active indices
+    result = {idx: float(val) for idx, val in zip(active_indices, shap_values)}
+    return result
+
 def compute_local_explanations(model, X_sample, scaler, feature_names):
     """
-    Computes local feature attribution (SHAP equivalent) for patients.
-    Returns:
-        shap_values: Array of shape (n_samples, n_features)
-        base_value: Float representing model's average probability baseline
+    Computes mathematically rigorous local feature attribution (SHAP values) for patients
+    using our custom Exact/KernelSHAP solver.
     """
     X_sample_np = np.asarray(X_sample)
+    n_samples, n_features = X_sample_np.shape
     
     # Calculate baseline average prediction
-    # For clinical relevance, baseline is 0.5 (equal probability) or mean predicted prob
     probs = model.predict_proba(X_sample_np)[:, 1]
     base_value = float(np.mean(probs))
     
-    # Handle Logistic Regression SHAP values (Exact math)
-    if hasattr(model, 'w') and not hasattr(model, 'trees'):
-        # w_i * (x_normalized) represents the linear logit contribution
-        w = model.w
-        shap_values = X_sample_np * w
-        
-    # Handle Random Forest local explanations (Weighted distance from population mean)
-    else:
-        importances = model.feature_importances_
-        # Weighted normalized contribution: importance * scaled_value
-        shap_values = X_sample_np * importances
-        
+    # Compute background means (baseline values) from X_sample itself
+    background_means = np.mean(X_sample_np, axis=0)
+    
+    active_indices = list(range(n_features))
+    shap_values = np.zeros((n_samples, n_features))
+    
+    print(f"[EXPLAINABILITY] Computing true Shapley values for {n_samples} samples...")
+    for idx in range(n_samples):
+        patient = X_sample_np[idx]
+        patient_shap = compute_single_patient_shap(model, patient, active_indices, background_means, n_samples=800)
+        for f_idx in range(n_features):
+            shap_values[idx, f_idx] = patient_shap[f_idx]
+            
     return shap_values, base_value
 
 

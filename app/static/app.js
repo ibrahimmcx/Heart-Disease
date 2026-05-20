@@ -3,6 +3,8 @@
    ------------------------------------------------------------- */
 
 let shapChart = null;
+let paretoChart = null;
+let globalCostSummary = null;
 
 // Determine backend API Base URL based on page origin.
 // Enables double-clicking index.html directly from local folder.
@@ -62,6 +64,7 @@ async function fetchSystemBenchmarks() {
         const costRes = await fetch(`${API_BASE}/api/cost-summary`);
         if (costRes.ok) {
             const summary = await costRes.json();
+            globalCostSummary = summary;
             updateParetoSummary(summary);
         }
     } catch (err) {
@@ -98,6 +101,8 @@ function populateMetricsTable(metrics) {
 function updateParetoSummary(summary) {
     document.getElementById("pareto-avg-cost").textContent = `$${summary.staged_simulation.avg_cost.toFixed(2)}`;
     document.getElementById("pareto-savings").textContent = `${(100.0 - (summary.staged_simulation.avg_cost / 990.0) * 100.0).toFixed(1)}%`;
+    document.getElementById("pareto-accuracy").textContent = `${(summary.staged_simulation.accuracy * 100.0).toFixed(2)}% Accuracy`;
+    renderParetoChart(summary);
 }
 
 
@@ -161,6 +166,11 @@ async function runPatientDiagnosis() {
         
         // 5. Update Explainable AI Chart
         renderSHAPChart(data.explanations);
+        
+        // 6. Update Pareto Frontier Chart with Current Patient Highlight
+        if (globalCostSummary) {
+            renderParetoChart(globalCostSummary, { cost: data.total_diagnostic_cost });
+        }
 
     } catch (err) {
         alert("Clinical diagnosis engine error: " + err.message);
@@ -324,6 +334,152 @@ function renderSHAPChart(explanations) {
                 y: {
                     grid: { display: false },
                     ticks: { color: '#F3F4F6', font: { weight: 'bold' } }
+                }
+            }
+        }
+    });
+}
+
+
+/**
+ * Renders the interactive Pareto Frontier scatter and line chart via Chart.js.
+ */
+function renderParetoChart(summary, currentPatient = null) {
+    const ctx = document.getElementById('pareto-chart').getContext('2d');
+    
+    // Prepare data points for standard variants
+    const curvePoints = [
+        { x: summary.variants.B.cost, y: summary.variants.B.auc },
+        { x: summary.variants.D.cost, y: summary.variants.D.auc },
+        { x: summary.variants.C.cost, y: summary.variants.C.auc },
+        { x: summary.variants.A.cost, y: summary.variants.A.auc }
+    ];
+    
+    // Sort curve points by cost (x) to draw the connecting line properly
+    curvePoints.sort((a, b) => a.x - b.x);
+    
+    const datasets = [
+        // Dataset 0: Connecting dashed line
+        {
+            label: 'Pareto Frontier Line',
+            data: curvePoints,
+            type: 'line',
+            borderColor: 'rgba(52, 211, 153, 0.3)', // light emerald-500 equivalent
+            borderWidth: 2,
+            borderDash: [5, 5],
+            fill: false,
+            showLine: true,
+            pointRadius: 0,
+            order: 3
+        },
+        // Dataset 1: Standard Tiers / Variants
+        {
+            label: 'Standard Tiers',
+            data: [
+                { x: summary.variants.B.cost, y: summary.variants.B.auc, label: 'Variant B: Low-Cost' },
+                { x: summary.variants.D.cost, y: summary.variants.D.auc, label: 'Variant D: Optimized' },
+                { x: summary.variants.C.cost, y: summary.variants.C.auc, label: 'Variant C: Immediate' },
+                { x: summary.variants.A.cost, y: summary.variants.A.auc, label: 'Variant A: Full-Feature' }
+            ],
+            type: 'scatter',
+            backgroundColor: ['#e76f51', '#2a9d8f', '#f4a261', '#3b82f6'],
+            pointRadius: 7,
+            pointHoverRadius: 9,
+            order: 2
+        },
+        // Dataset 2: Staged Escalation Average
+        {
+            label: 'Staged Escalation (Avg)',
+            data: [{ x: summary.staged_simulation.avg_cost, y: summary.staged_simulation.auc }],
+            type: 'scatter',
+            backgroundColor: '#e9c46a',
+            pointStyle: 'star',
+            pointRadius: 13,
+            pointHoverRadius: 15,
+            order: 1
+        }
+    ];
+
+    // Dataset 3: Current Patient Triage Marker (if active)
+    if (currentPatient) {
+        let patientY = summary.variants.A.auc; // default to Stage 4 AUC
+        if (currentPatient.cost <= 35.0) {
+            patientY = summary.variants.B.auc;
+        } else if (currentPatient.cost <= 120.0) {
+            patientY = 0.955;
+        } else if (currentPatient.cost <= 400.0) {
+            patientY = summary.variants.C.auc;
+        }
+        
+        datasets.push({
+            label: 'Current Patient Location',
+            data: [{ x: currentPatient.cost, y: patientY }],
+            type: 'scatter',
+            backgroundColor: '#00F0FF', // Neon Cyan
+            borderColor: '#FFFFFF',
+            borderWidth: 2,
+            pointRadius: 11,
+            pointHoverRadius: 13,
+            pointStyle: 'rectRot',
+            order: 0
+        });
+    }
+
+    if (paretoChart) {
+        paretoChart.destroy();
+    }
+
+    paretoChart = new Chart(ctx, {
+        data: { datasets: datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const p = context.raw;
+                            if (context.dataset.label === 'Current Patient Location') {
+                                return `Current Patient Triage: Cost $${p.x}, Stage AUC ${p.y.toFixed(4)}`;
+                            }
+                            if (context.dataset.label === 'Staged Escalation (Avg)') {
+                                return `Staged Escalation (Avg): Cost $${p.x.toFixed(2)}, AUC ${p.y.toFixed(4)}`;
+                            }
+                            if (p.label) {
+                                return `${p.label}: Cost $${p.x}, AUC ${p.y.toFixed(4)}`;
+                            }
+                            return `Cost $${p.x}, AUC ${p.y.toFixed(4)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    position: 'bottom',
+                    min: 0,
+                    max: 1100,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#9CA3AF' },
+                    title: {
+                        display: true,
+                        text: 'Diagnostic Cost (USD)',
+                        color: '#9CA3AF',
+                        font: { size: 10 }
+                    }
+                },
+                y: {
+                    min: 0.75,
+                    max: 1.02,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#9CA3AF' },
+                    title: {
+                        display: true,
+                        text: 'Diagnostic ROC-AUC',
+                        color: '#9CA3AF',
+                        font: { size: 10 }
+                    }
                 }
             }
         }
